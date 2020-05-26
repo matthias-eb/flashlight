@@ -3,19 +3,43 @@
 package main
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"io/ioutil"
 )
 
 func TestStaticFileServer(t *testing.T) {
 	r := newRouter()
 	mockServer := httptest.NewServer(r)
 
-	// We want to hit the 'GET /assets/' route to get the index.html file response
-	resp, err := http.Get(mockServer.URL + "/")
-	if err !=nil {
+	resp, err := http.Get(mockServer.URL + "/files/")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Status should be 200 but was %d", resp.StatusCode)
+	}
+
+	// It isn't wise to test the entire content of the HTML file.
+	// Instead, we test that the content-type header is "text/html; charset=utf-8"
+	// so that we know that an html file has been served
+	contentType := resp.Header.Get("Content-Type")
+	expectedContentType := "text/html; charset=utf-8"
+
+	if expectedContentType != contentType {
+		t.Errorf("Wrong content type, expected %s, got %s", expectedContentType, contentType)
+	}
+}
+func TestRootFileServer(t *testing.T) {
+	r := newRouter()
+	mockServer := httptest.NewServer(r)
+
+	// We want to hit the 'GET /' route to get the index.html file response
+	resp, err := http.Get(mockServer.URL)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -39,7 +63,7 @@ func TestRouterForNonExistantRoute(t *testing.T) {
 	r := newRouter()
 	mockServer := httptest.NewServer(r)
 
-	// We now make a request to a route we didn't define
+	// We now make a request to a route we have with a Method we didn't define
 	resp, err := http.Post(mockServer.URL+"/hello", "", nil)
 
 	if err != nil {
@@ -94,7 +118,7 @@ func TestRouter(t *testing.T) {
 	defer resp.Body.Close()
 	// read the body into a bunch of bytes (b)
 	b, err := ioutil.ReadAll(resp.Body)
-	if err!=nil {
+	if err != nil {
 		t.Fatal(err)
 	}
 	//convert the bytes to a string
@@ -149,4 +173,3 @@ func TestHandler(t *testing.T) {
 		t.Errorf("handler returned unexpected body: got %v want %v", actual, expected)
 	}
 }
-

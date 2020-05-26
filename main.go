@@ -16,39 +16,36 @@ import (
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
-	
-	// The "HandleFunc" method accepts a path and a function as arguments
-	// (Yes, we can pass functions as arguments, and even trat them like variables in Go)
-	// However, the handler function has to have the appropriate signature (as described by the "handler" function below)
-	// This is there the router is useful, it allows us to declae methods that
-	// this path will be valid for
 	r.HandleFunc("/hello", handler).Methods("GET")
 
-	// Declare the static file directory and point it to the
-	// directory we just made
-	staticFileDirectory := http.Dir("./assets/")
+	// This is the directory we want to publish, in this case,
+	// the project root, which is currently our working directory.
+	projectRootDir := http.Dir(".")
+	staticFileDir := http.Dir("./assets/")
 
 	// Declare the handler, that routes requests to their respective filename.
 	// The fileserver is wrapped in the `stripPrefix` method, because we want to
-	// remove the "/assets/" prefix when looking for files.
-	// For example, if we type "/assets/index.html" in our browser, the file server
+	// remove the "/files/" prefix when looking for files.
+	// For example, if we type "/files/index.html" in our browser, the file server
 	// will look for only "index.html" inside the directory declared above.
 	// If we did not strip the prefix, the file server would look for
-	// "./assets/assets/index.html", and yield an error
-	//staticFileHandler := http.StripPrefix("/assets/", http.FileServer(staticFileDirectory))
-	staticFileHandler := http.FileServer(staticFileDirectory)
+	// "./files/index.html", and yield an error
+	staticFileHandler := http.StripPrefix("/files/", http.FileServer(projectRootDir))
 
 	// The "PathPrefix" method acts as a matcher, and matches all routes starting
-	// with "/assets/", instead of the absolute route itself
-	r.PathPrefix("/").Handler(staticFileHandler).Methods("GET")
+	// with "/files/", instead of the absolute route itself
+	r.PathPrefix("/files/").Handler(staticFileHandler).Methods("GET")
 
+	// Same as above, just for our main pages to be served on the project root
+
+	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(staticFileDir))).Methods("GET")
 	return r
 }
 
 func main() {
 
 	r := newRouter()
-
+	//http.Handle("/files/", http.StripPrefix("/files", http.FileServer(http.Dir("."))))
 	// After defining our server, we finally "listen and serve" on port 8080
 	// The second argument is the handler, which we defined earlier
 	// and the handler defined above (in "HandleFunc") is used
