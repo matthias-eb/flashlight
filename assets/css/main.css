@@ -1,0 +1,143 @@
+body {
+	padding-top: 80px;
+}
+
+.bc_primary {
+	border-color: #f6b92b ;
+}
+input#comment {
+	border: rgba(0,0,0,.125) 1px solid;
+}
+input#fileChooser {
+	border-radius: 0;
+}
+
+textarea {
+	border-color: #f6b92b;
+	border-style: solid;
+}
+
+.icon-background2 {
+	color: white ;
+}
+
+a.button:hover {
+	background-color: #eebe4e;
+	text-decoration: none;
+}
+a#addCard {
+	line-height: 50px;
+}
+
+a#logout_button:hover {
+	text-decoration: none;
+	border: 2px solid #f6b92b;
+	border-radius: 5px;
+}
+#like:hover {
+	background-color: #eebe4e !important;
+}
+#like:hover > i {
+	color: whitesmoke;
+}
+
+a#logout_button {
+	color: #f6b92b;
+	padding: 4px;
+	border: 2px solid transparent;
+}
+
+button:hover {
+	background-color: #eebe4e;
+}
+
+.button {
+	width: 100%;
+	height: 40px;
+	border: none;
+	color: white !important;
+	font-size: medium;
+	font-weight: bold;
+	display: inline-block;
+	text-align: center;
+	line-height: 40px;
+}
+.del_button {
+	background-color: white;
+	border: #f6b92b 2px solid;
+	line-height: 35px;
+}
+.del_button:hover {
+	background-color: #fff674;
+
+}
+
+.row {
+	padding-bottom: 20px;
+}
+
+.card-header {
+	background-color: white;
+}
+
+.primary_flashlight {
+	color: #f6b92b;
+}
+
+.secondary_flashlight {
+	color: white;
+}
+
+.bg_primary_flashlight {
+	background-color: #f6b92b;
+}
+
+.navbar {
+	justify-content: center;
+}
+
+.central_view {
+	max-width: 576px;
+	justify-content: center;
+}
+
+.card_h6 {
+	margin-bottom: 0;
+	font-weight: bold;
+}
+
+.bold-title {
+	font-weight: bold;
+}
+
+.card_date {
+	font-size: x-small;
+	color: gray;
+}
+
+.card-footer {
+	background-color: white;
+}
+
+
+#nr_comments, #nr_likes {
+	color: black;
+	font-family:Arial, Helvetica, sans-serif;
+}
+
+.image_left {
+	padding-left: 0;
+}
+
+.image_right {
+	padding-right: 0;
+}
+
+.h-img {
+	height: 13rem;
+}
+
+img.card_img {
+	height: 13rem;
+	object-fit: contain;
+}
