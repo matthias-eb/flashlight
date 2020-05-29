@@ -20,6 +20,7 @@ func newRouter() *mux.Router {
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.
+	
 	projectRootDir := http.Dir(".")
 	staticFileDir := http.Dir("./assets/")
 
