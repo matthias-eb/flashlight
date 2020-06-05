@@ -32,10 +32,12 @@ func newRouter() *mux.Router {
 	// If we did not strip the prefix, the file server would look for
 	// "./files/index.html", and yield an error
 	staticFileHandler := http.StripPrefix("/files/", http.FileServer(projectRootDir))
+	staticFileHandler2 := http.StripPrefix("/files", http.FileServer(projectRootDir))
 
 	// The "PathPrefix" method acts as a matcher, and matches all routes starting
 	// with "/files/", instead of the absolute route itself
 	r.PathPrefix("/files/").Handler(staticFileHandler).Methods("GET")
+	r.PathPrefix("/files").Handler(staticFileHandler2).Methods("GET")
 
 	// Same as above, just for our main pages to be served on the project root
 
