@@ -32,6 +32,22 @@ func TestStaticFileServer(t *testing.T) {
 	if expectedContentType != contentType {
 		t.Errorf("Wrong content type, expected %s, got %s", expectedContentType, contentType)
 	}
+
+	// Now test if we can access a file within that folder
+	resp, err = http.Get(mockServer.URL + "/files/main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Status should be 200 but was %d", resp.StatusCode)
+	}
+	contentType = resp.Header.Get("Content-Type")
+	expectedContentType = "text/plain; charset=utf-8"
+	if contentType != expectedContentType {
+		t.Errorf("content Type should be %s but was %s", expectedContentType, contentType)
+	}
+
 }
 func TestRootFileServer(t *testing.T) {
 	r := newRouter()
