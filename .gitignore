@@ -1,2 +1,5 @@
 assets/artefacts/Emojis
 flashlight
+vendor
+Gopkg.toml
+Gopkg.lock

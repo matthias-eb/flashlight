@@ -49,14 +49,14 @@
 					<div><small>Hier kannst du ein neues Bild hochladen.</small></div>
 			</div>
 			<div class="row">
-				<form>
-					<input type="file" id="fileChooser" name="fileChooser">
+				<form enctype="multipart/form-data" action="./upload" method="POST">
+					<input type="file" id="newImage" name="newImage" accept="image/*">
 				</div>
 				<div class="row">
-					<textarea rows="3" class="w-100 rounded" id="commentinput" placeholder="Beschreibung"></textarea>
+					<textarea name="description" rows="3" class="w-100 rounded" id="description" placeholder="Beschreibung"></textarea>
 				</div>
 				<div class="row justify-content-center">
-					<button class="button bg_primary_flashlight w-75 rounded">Hochladen</button>
+					<button type="submit" class="button bg_primary_flashlight w-75 rounded">Hochladen</button>
 				</div>
 			</form>
 			</div>

@@ -8,15 +8,41 @@ package main
 import (
 	// "fmt" has methods for formatted I/O operations (like printing to the console)
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"github.com/gorilla/sessions"
+
+	"github.com/gorilla/securecookie"
 )
+
+// EnvSessionKey is the String under which we find the Session Key in the Environment Variables
+const EnvSessionKey string = "SESSION_KEY"
+
+func init() {
+	sessionKey := os.Getenv(EnvSessionKey)
+	// Create a new Session Key if there isn't one saved yet
+	if sessionKey == "" {
+		key := string(securecookie.GenerateRandomKey(32))
+		os.Setenv(EnvSessionKey, key)
+	}
+}
+
+// We need a Cookie Store with a private Key. This key should be generated once.
+var store = sessions.NewCookieStore([]byte(os.Getenv(EnvSessionKey)))
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/hello", handler).Methods("GET")
+	r.HandleFunc("/upload", uploadHandler).Methods("POST")
+	r.HandleFunc("/secret", secret).Methods("GET")
+	r.HandleFunc("/login", userLogin).Methods("GET")
+	r.HandleFunc("/logout", userLogout).Methods("GET")
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.
@@ -58,4 +84,63 @@ func main() {
 func handler(w http.ResponseWriter, r *http.Request) {
 	// For this case, we will always pipe "Hello World" into the response writer
 	fmt.Fprintf(w, "Hello World!")
+}
+
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := store.Get(r, "session-name")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Parse up to 100 Megabytes of filesize
+	r.ParseMultipartForm(100000000)
+
+	file, handler, err := r.FormFile("newImage")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	defer file.Close()
+	fmt.Printf("Uploaded Filename: %+v\n", handler.Filename)
+	fmt.Printf("File Size: %+v\n", handler.Size)
+	fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+	tempFile, err := ioutil.TempFile(os.TempDir(), "upload-*.png")
+	if err != nil {
+		http.Error(w, "Cannot create temporary File! "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tempFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	tempFile.Write(fileBytes)
+
+	description := r.FormValue("description")
+
+	fmt.Fprintf(w, "The file can be found under %+v\n", tempFile.Name())
+
+	fmt.Fprintf(w, "The Description for this image is:\n%+v\n", description)
+
+	fmt.Fprintf(w, "Upload successful\n")
+}
+
+func secret(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func userLogin(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func userLogout(w http.ResponseWriter, r *http.Request) {
+
 }
