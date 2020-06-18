@@ -109,6 +109,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("File Size: %+v\n", handler.Size)
 	fmt.Printf("MIME Header: %+v\n", handler.Header)
 
+	//Save the file as a temporary File in the /tmp folder.
+	// ToDo: add Folder for image storage of all users / of a specific user and save them there
 	tempFile, err := ioutil.TempFile(os.TempDir(), "upload-*.png")
 	if err != nil {
 		http.Error(w, "Cannot create temporary File! "+err.Error(), http.StatusInternalServerError)

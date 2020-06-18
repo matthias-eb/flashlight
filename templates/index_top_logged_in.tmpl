@@ -1,0 +1,14 @@
+{{define "index_top_logged_in"}}
+        <div class="row" style="padding-bottom: 20px;">
+			<div class="col-4 col-lg-5 pl-0">
+				<h5 class="mb-0" style="font-weight: bold;">{{.}}</h5>
+				<a href="index.html" id="logout_button"><small>Logout</small></a>
+			</div>
+			<div class="col-5 pr-0">
+				<a class="button bg_primary_flashlight h-100 rounded" style="line-height: 45px;" href="images.html">Meine Bilder</a>
+			</div>
+			<div class="col-3 col-lg-2 pr-0">
+				<a class="button bg_primary_flashlight h-100 w-100 rounded" id="addCard" href="add_image.html"><i class="fa fa-plus secondary_flashlight"></i></a>
+			</div>
+		</div>
+{{end}}
