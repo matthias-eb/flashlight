@@ -11,38 +11,19 @@ import (
 	"io/ioutil"
 	"os"
 
+	// Import own controller functions
+	ctr "github.com/matthias-eb/flashlight/app/controller"
+
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
 
 	"github.com/gorilla/mux"
-
-	"github.com/gorilla/sessions"
-
-	"github.com/gorilla/securecookie"
 )
-
-// EnvSessionKey is the String under which we find the Session Key in the Environment Variables
-const EnvSessionKey string = "SESSION_KEY"
-
-func init() {
-	sessionKey := os.Getenv(EnvSessionKey)
-	// Create a new Session Key if there isn't one saved yet
-	if sessionKey == "" {
-		key := string(securecookie.GenerateRandomKey(32))
-		os.Setenv(EnvSessionKey, key)
-	}
-}
-
-// We need a Cookie Store with a private Key. This key should be generated once.
-var store = sessions.NewCookieStore([]byte(os.Getenv(EnvSessionKey)))
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/hello", handler).Methods("GET")
-	r.HandleFunc("/upload", uploadHandler).Methods("POST")
-	r.HandleFunc("/secret", secret).Methods("GET")
-	r.HandleFunc("/login", userLogin).Methods("GET")
-	r.HandleFunc("/logout", userLogout).Methods("GET")
+	r.HandleFunc("/", ctr.Preview).Methods("GET")
+	r.HandleFunc("/login", ctr.Login).Methods("GET", "POST")
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.
@@ -87,13 +68,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := store.Get(r, "session-name")
+	/*	_, err := store.Get(r, "session-name")
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	*/
 	// Parse up to 100 Megabytes of filesize
 	r.ParseMultipartForm(100000000)
 
@@ -133,16 +114,4 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "The Description for this image is:\n%+v\n", description)
 
 	fmt.Fprintf(w, "Upload successful\n")
-}
-
-func secret(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func userLogin(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func userLogout(w http.ResponseWriter, r *http.Request) {
-
 }

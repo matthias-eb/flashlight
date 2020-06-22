@@ -1,5 +1,5 @@
 {{define "index"}}
-{{template "nav_index"}}
+{{template "nav_index" .Title}}
     <div class="container central_view">
 		{{template "index_top_logged_out" .User}}
         {{with .NewImages}}
