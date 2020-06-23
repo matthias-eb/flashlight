@@ -2,7 +2,9 @@
         <div class="row" style="padding-bottom: 20px;">
 			<div class="col-4 col-lg-5 pl-0">
 				<h5 class="mb-0" style="font-weight: bold;">{{.}}</h5>
-				<a href="index.html" id="logout_button"><small>Logout</small></a>
+				<form action="/logout" method="POST">
+					<button type="submit" id="logout_button"><small>Logout</small></a>
+				</form>
 			</div>
 			<div class="col-5 pr-0">
 				<a class="button bg_primary_flashlight h-100 rounded" style="line-height: 45px;" href="images.html">Meine Bilder</a>

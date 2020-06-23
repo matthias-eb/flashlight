@@ -1,14 +1,34 @@
-{{define "index"}}
 {{template "nav_index" .Title}}
+{{$username := .User}}
     <div class="container central_view">
-		{{template "index_top_logged_out" .User}}
-        {{range .Images}}
+		{{if .User}}
+			{{template "index_top_logged_in" .User}}
+		{{else}}
+			{{template "index_top_logged_out"}}
+        {{end}}
+		{{range .Images}}
         <div class="row">
 			<div class="card">
+				{{if $username}}
 				<div class="card-header">
-					<h6 class="card_h6">{{.User}}</h6>
+					<div class="row pb-0">
+						<div class="col-9 col-lg-10">
+							<h6 class="card_h6">{{.Owner}}</h6>
+							<div class="card_date">
+								{{.Date}}
+							</div>
+						</div>
+						<div class="col-3 col-lg-2">
+							<button class="{{if .Liked}}active{{end}} h-100 w-100 rounded" type="submit" id="like" style="background-color: white; border: 2px solid #f6b92b;" {{if .Liked}}disabled{{end}}><i class="fa fa-heart primary_flashlight"></i></button>
+						</div>
+					</div>
+				</div>
+				{{else}}
+				<div class="card-header">
+					<h6 class="card_h6">{{.Owner}}</h6>
 					<div class="card_date">{{.Date}}</div>
 				</div>
+				{{end}}
 				<img src="{{.Path}}" class="card-img-top" alt="">
 				<div class="card-body">
 					<h6 class="card-title bold-title">Gefällt {{.Likes}} Leuten</h6>
@@ -17,14 +37,27 @@
 				<div class="card-footer">
                     {{range .Comments}}
 					<p class="card-text">
-						<span class="bold-title">{{.User}}</span>
+						<span class="bold-title">{{.Commentor}}</span>
 						{{.Comment}}
 					</p>
                     {{end}}
 				</div>
+				{{if $username}}
+				<div class="card-footer">
+					<form action="/comment" method="POST">
+						<div class="row pb-0">
+							<div class="col-10">
+								<input class="form-control-plaintext rounded" type="text" name="comment" placeholder="Kommentieren" id="comment" required>
+							</div>
+							<div class="col-2">
+								<button class="button rounded" action="submit" style="background-color: whitesmoke;"><i class="fa fa-paper-plane" style="color: black;"></i></button>
+							</div>
+						</div>
+					</form>
+				</div>
+				{{end}}
 			</div>
 		</div>
         {{end}}
 
 {{template "footer"}}
-{{end}}

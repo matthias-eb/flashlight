@@ -11,7 +11,6 @@ import (
 //Login is for logging in a User. It can receive a POST or a GET Method.
 func Login(w http.ResponseWriter, r *http.Request) {
 	mw.SetupSession(w, r)
-	defer mw.SaveSession(w, r)
 
 	fmt.Println("Request for /login coming in: " + r.Method)
 
@@ -22,7 +21,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		user, err := db.GetUser(username)
 
 		if err == nil {
+			fmt.Printf("Checking %+v with %+v\n", password, user.Password)
 			err = mw.AuthenticateUser(username, password, user.Password)
+			mw.SaveSession(w, r)
 		}
 
 		if err != nil {
@@ -30,7 +31,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, "/", http.StatusOK)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	} else if r.Method == "GET" {
 		mw.Templ.ExecuteTemplate(w, "login.tmpl", Data{Title: "Flashlight Login", Error: nil})
@@ -40,14 +41,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 //Logout logs out a User.
 func Logout(w http.ResponseWriter, r *http.Request) {
 	mw.SetupSession(w, r)
-	defer mw.SaveSession(w, r)
-	mw.EndSession()
-
+	fmt.Println("Starting logout")
+	mw.EndSession(w, r)
+	mw.SaveSession(w, r)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 //Register registrates a User if the username isn't taken and the password isn't too short and it matches the password confirmation.
 func Register(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method == "POST" {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
@@ -67,14 +68,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		if _, err := db.GetUser(username); err == nil {
 			errors = append(errors, "Benutzername existiert bereits")
 		}
+		mw.SetupSession(w, r)
 
 		if len(errors) > 0 {
+			mw.SaveSession(w, r)
 			mw.Templ.ExecuteTemplate(w, "register.tmpl", Data{Title: "Flashlight Registrieren", Error: errors})
 			return
 		}
-
-		mw.SetupSession(w, r)
-		defer mw.SaveSession(w, r)
 
 		user := db.User{
 			Name:     username,
@@ -82,20 +82,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			Password: password,
 		}
 
-		db.AddUser(user)
-
-		/*
-			body, err := r.GetBody()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			req, err := http.NewRequest("GET", "/", body)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			http.Redirect(w, req, "/", http.StatusOK)
-		*/
-		http.Redirect(w, r, "/", http.StatusOK)
+		err := db.AddUser(user)
+		if err != nil {
+			fmt.Printf("Error while Adding User: %+v\n", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		user, err = db.GetUser(username)
+		if err != nil {
+			fmt.Printf("Error Getting User: %+v\n", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		mw.AuthenticateUser(username, password, user.Password)
+		mw.SaveSession(w, r)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else if r.Method == "GET" {
 		mw.Templ.ExecuteTemplate(w, "register.tmpl", Data{Title: "Flashlight Registrierung", Error: nil})
 	}

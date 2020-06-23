@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,8 +9,6 @@ import (
 	"github.com/gorilla/sessions"
 
 	"github.com/gorilla/securecookie"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 const envSessionKey string = "SESSION_KEY"
@@ -26,10 +23,12 @@ func init() {
 		key := string(securecookie.GenerateRandomKey(32))
 		os.Setenv(envSessionKey, key)
 	}
+	cookieStore = sessions.NewCookieStore([]byte(os.Getenv(envSessionKey)))
+
 }
 
-//CookieStore : We need a Cookie CookieStore with a private Key. This key should be generated once.
-var CookieStore = sessions.NewCookieStore([]byte(os.Getenv(envSessionKey)))
+//cookieStore : We need a cookieStore with a private Key. This key should be generated once.
+var cookieStore *sessions.CookieStore
 
 var session *sessions.Session
 
@@ -37,16 +36,21 @@ var session *sessions.Session
 //This is a handler Method. It gets invoked through alice in main.go
 func SetupSession(w http.ResponseWriter, r *http.Request) {
 	var err error
-	session, err = CookieStore.Get(r, sessionSTR)
+	session, err = cookieStore.Get(r, sessionSTR)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Printf("Error initializing cookieStore: %+v\n", err.Error())
 	}
-
+	if session.Values[authenticatedSTR] == nil {
+		session.Values[authenticatedSTR] = false
+		session.Values[usernameSTR] = "none"
+		SaveSession(w, r)
+	}
 }
 
 //SaveSession saves the current session.
 func SaveSession(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
+	fmt.Printf("Session saved for User")
 }
 
 //AuthenticateUser authenticates a User and saves the cookies, if the password is correct.
@@ -63,34 +67,37 @@ func AuthenticateUser(username string, password string, hashedPassword string) (
 }
 
 //EndSession unauthenticates the User and removes the Username from the Values.
-func EndSession() {
-	fmt.Printf("Logging out user %s", session.Values[usernameSTR])
+func EndSession(w http.ResponseWriter, r *http.Request) {
+	username := session.Values[usernameSTR]
+	fmt.Printf("Logging out user %s\n", username)
 	session.Values[usernameSTR] = ""
 	session.Values[authenticatedSTR] = false
 }
 
 //CheckAuthentication checks if the current User has a valid session and if the session is authenticated. If it is not, then an Error message should be returned and the Starting Page is opened
-func CheckAuthentication(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-
-		if !session.Values[authenticatedSTR].(bool) {
-			Templ.ExecuteTemplate(w, "index.tmpl", nil)
-		}
-
-		next.ServeHTTP(w, r)
+func CheckAuthentication(w http.ResponseWriter, r *http.Request) (string, error) {
+	fmt.Printf("User authentication: %+v for User %+v\n", session.Values[authenticatedSTR], session.Values[usernameSTR])
+	username := session.Values[usernameSTR].(string)
+	if !session.Values[authenticatedSTR].(bool) {
+		return username, errors.New("User not authenticated")
 	}
-
-	return http.HandlerFunc(fn)
+	return username, nil
 }
 
 func passwordCorrect(passwordHashed string, passwordPlain string) bool {
-	passwordDB, err := base64.StdEncoding.DecodeString(passwordHashed)
-	if err != nil {
-		return false
+	if passwordHashed == passwordPlain {
+		return true
 	}
-	err = bcrypt.CompareHashAndPassword(passwordDB, []byte(passwordPlain))
-	if err != nil {
-		return false
-	}
-	return true
+	return false
+	/*
+		passwordDB, err := base64.StdEncoding.DecodeString(passwordHashed)
+		if err != nil {
+			return false
+		}
+		err = bcrypt.CompareHashAndPassword(passwordDB, []byte(passwordPlain))
+		if err != nil {
+			return false
+		}
+		return true
+	*/
 }

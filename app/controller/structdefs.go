@@ -1,14 +1,16 @@
 package controller
 
+//Comment is the Comment that gets Inserted by the user
 type Comment struct {
-	User    string
-	Comment string
+	Commentor string
+	Comment   string
 }
 type Image struct {
-	User        string
+	Owner       string
 	Date        string
 	Path        string
 	Likes       string
+	Liked       bool
 	Description string
 	Comments    []Comment
 }

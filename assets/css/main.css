@@ -37,9 +37,16 @@ a#logout_button:hover {
 #like:hover {
 	background-color: #eebe4e !important;
 }
-#like:hover > i {
-	color: whitesmoke;
+	#like:hover > i {
+		color: whitesmoke;
+	}
+#like.active {
+	background-color: #eebe4e !important;
 }
+	#like.active > i {
+		color: whitesmoke;
+		display: inline-block;
+	}
 
 a#logout_button {
 	color: #f6b92b;

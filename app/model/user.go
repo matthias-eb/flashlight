@@ -35,12 +35,17 @@ func GetUser(username string) (user User, err error) {
 		return
 	}
 
-	uJSON, err := json.Marshal(u)
+	fmt.Printf("Found User in Database: %+v\n", u)
+	uJSON, err := json.Marshal(u[0])
 	if err != nil {
 		return user, err
 	}
-	json.Unmarshal(uJSON, &user)
-
+	err = json.Unmarshal(uJSON, &user)
+	fmt.Printf("After Marshal and Unmarshal: %+v\n", user)
+	if err != nil {
+		fmt.Printf("Error while Unmarshaling: %+v", err.Error())
+		return user, err
+	}
 	return user, nil
 }
 
