@@ -26,6 +26,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:26580a37df9f0e1db43b6283e7daf108e4887a024b5084b69b1bc40af89eefce"
+  name = "github.com/justinas/alice"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "698d694619453f429d388422116af97d11f37f41"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:9e1b876b289c0cebe7aa8565997510c745e5bdeff3bf8c2e5573112976b88d96"
   name = "github.com/leesper/couchdb-golang"
   packages = ["."]
@@ -51,6 +59,7 @@
     "github.com/gorilla/mux",
     "github.com/gorilla/securecookie",
     "github.com/gorilla/sessions",
+    "github.com/justinas/alice",
     "github.com/leesper/couchdb-golang",
     "golang.org/x/crypto/bcrypt",
   ]

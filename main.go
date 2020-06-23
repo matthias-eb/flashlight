@@ -1,6 +1,3 @@
-// This is the name of our package
-// Everything with this package name can see everything
-// else inside the same package, regardless of the file they are in
 package main
 
 // These are the libraries we are going to use
@@ -10,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	//Chaining Methods with this Handler
 
 	// Import own controller functions
 	ctr "github.com/matthias-eb/flashlight/app/controller"
@@ -22,8 +21,11 @@ import (
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
+
 	r.HandleFunc("/", ctr.Preview).Methods("GET")
 	r.HandleFunc("/login", ctr.Login).Methods("GET", "POST")
+	r.HandleFunc("/register", ctr.Register).Methods("GET", "POST")
+	r.HandleFunc("/logout", ctr.Logout).Methods("POST")
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.

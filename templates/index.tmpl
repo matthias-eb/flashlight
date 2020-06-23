@@ -2,15 +2,14 @@
 {{template "nav_index" .Title}}
     <div class="container central_view">
 		{{template "index_top_logged_out" .User}}
-        {{with .NewImages}}
-        {{range .}}
+        {{range .Images}}
         <div class="row">
 			<div class="card">
 				<div class="card-header">
 					<h6 class="card_h6">{{.User}}</h6>
 					<div class="card_date">{{.Date}}</div>
 				</div>
-				<img src="{{.ImagePath}}" class="card-img-top" alt="">
+				<img src="{{.Path}}" class="card-img-top" alt="">
 				<div class="card-body">
 					<h6 class="card-title bold-title">Gefällt {{.Likes}} Leuten</h6>
 					<p class="card-text">{{.Description}}</p>
@@ -25,7 +24,6 @@
 				</div>
 			</div>
 		</div>
-        {{end}}
         {{end}}
 
 {{template "footer"}}
