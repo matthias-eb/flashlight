@@ -4,9 +4,6 @@ package main
 // Both "fmt" and "net" are part of the Go standard library
 import (
 	// "fmt" has methods for formatted I/O operations (like printing to the console)
-	"fmt"
-	"io/ioutil"
-	"os"
 
 	//Chaining Methods with this Handler
 
@@ -26,12 +23,15 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/login", ctr.Login).Methods("GET", "POST")
 	r.HandleFunc("/register", ctr.Register).Methods("GET", "POST")
 	r.HandleFunc("/logout", ctr.Logout).Methods("POST")
+	r.HandleFunc("/upload", ctr.UploadImage).Methods("GET", "POST")
+	r.HandleFunc("/my-images", ctr.GetImages).Methods("GET")
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.
 
 	projectRootDir := http.Dir(".")
-	staticFileDir := http.Dir("./assets/")
+	staticFileDir := http.Dir("./assets/css")
+	staticArtefactsDir := http.Dir("./assets/artefacts")
 
 	// Declare the handler, that routes requests to their respective filename.
 	// The fileserver is wrapped in the `stripPrefix` method, because we want to
@@ -48,7 +48,9 @@ func newRouter() *mux.Router {
 
 	// Same as above, just for our main pages to be served on the project root
 
-	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(staticFileDir))).Methods("GET")
+	r.PathPrefix("/artefacts/").Handler(http.StripPrefix("/artefacts/", http.FileServer(staticArtefactsDir))).Methods("GET")
+	r.PathPrefix("/css/").Handler(http.StripPrefix("/css/", http.FileServer(staticFileDir))).Methods("GET")
+	r.PathPrefix("/images/").Handler(http.StripPrefix("/images/", http.FileServer(http.Dir("images/")))).Methods("GET")
 	return r
 }
 
@@ -60,60 +62,4 @@ func main() {
 	// The second argument is the handler, which we defined earlier
 	// and the handler defined above (in "HandleFunc") is used
 	http.ListenAndServe(":8080", r)
-}
-
-// "handler" is our handler function. It has to follow the function signature of a ResponseWriter and Request type
-// as the arguments.
-func handler(w http.ResponseWriter, r *http.Request) {
-	// For this case, we will always pipe "Hello World" into the response writer
-	fmt.Fprintf(w, "Hello World!")
-}
-
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	/*	_, err := store.Get(r, "session-name")
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	*/
-	// Parse up to 100 Megabytes of filesize
-	r.ParseMultipartForm(100000000)
-
-	file, handler, err := r.FormFile("newImage")
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer file.Close()
-	fmt.Printf("Uploaded Filename: %+v\n", handler.Filename)
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", handler.Header)
-
-	//Save the file as a temporary File in the /tmp folder.
-	// ToDo: add Folder for image storage of all users / of a specific user and save them there
-	tempFile, err := ioutil.TempFile(os.TempDir(), "upload-*.png")
-	if err != nil {
-		http.Error(w, "Cannot create temporary File! "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer tempFile.Close()
-
-	fileBytes, err := ioutil.ReadAll(file)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	tempFile.Write(fileBytes)
-
-	description := r.FormValue("description")
-
-	fmt.Fprintf(w, "The file can be found under %+v\n", tempFile.Name())
-
-	fmt.Fprintf(w, "The Description for this image is:\n%+v\n", description)
-
-	fmt.Fprintf(w, "Upload successful\n")
 }

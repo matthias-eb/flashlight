@@ -2,10 +2,14 @@ package controller
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	mw "github.com/matthias-eb/flashlight/app/middleware"
 	db "github.com/matthias-eb/flashlight/app/model"
+	st "github.com/matthias-eb/flashlight/app/structs"
 )
 
 //Login is for logging in a User. It can receive a POST or a GET Method.
@@ -23,18 +27,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			fmt.Printf("Checking %+v with %+v\n", password, user.Password)
 			err = mw.AuthenticateUser(username, password, user.Password)
-			mw.SaveSession(w, r)
+			if err == nil {
+				mw.SaveSession(w, r)
+			}
 		}
 
 		if err != nil {
-			mw.Templ.ExecuteTemplate(w, "login.tmpl", Data{Title: "Flashlight Login", Error: []string{"Benutzername oder Password waren falsch"}})
+			mw.Templ.ExecuteTemplate(w, "login.tmpl", st.Data{Title: "Flashlight Login", Error: []string{"Benutzername oder Password waren falsch"}})
 			return
 		}
 
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	} else if r.Method == "GET" {
-		mw.Templ.ExecuteTemplate(w, "login.tmpl", Data{Title: "Flashlight Login", Error: nil})
+		mw.Templ.ExecuteTemplate(w, "login.tmpl", st.Data{Title: "Flashlight Login", Error: nil})
 	}
 }
 
@@ -72,7 +78,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		if len(errors) > 0 {
 			mw.SaveSession(w, r)
-			mw.Templ.ExecuteTemplate(w, "register.tmpl", Data{Title: "Flashlight Registrieren", Error: errors})
+			mw.Templ.ExecuteTemplate(w, "register.tmpl", st.Data{Title: "Flashlight Registrieren", Error: errors})
 			return
 		}
 
@@ -96,7 +102,129 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		mw.SaveSession(w, r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else if r.Method == "GET" {
-		mw.Templ.ExecuteTemplate(w, "register.tmpl", Data{Title: "Flashlight Registrierung", Error: nil})
+		mw.Templ.ExecuteTemplate(w, "register.tmpl", st.Data{Title: "Flashlight Registrierung", Error: nil})
 	}
 
+}
+
+// UploadImage checks the User for a valid Session, then saves up to 100MB in filesize to the filesystem and saves everything necessary to the Database
+func UploadImage(w http.ResponseWriter, r *http.Request) {
+	var data st.Data      //Data to be added to the template
+	var errorstr []string //Any Error output meant for the user gets saved here
+
+	//Check if User is logged in
+	mw.SetupSession(w, r)
+	username, err := mw.CheckAuthentication(w, r)
+	if err != nil {
+		fmt.Printf("Error while authenticating: %+v\n", err.Error())
+		mw.EndSession(w, r)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	data = st.Data{
+		Title: "Flashlight Image Upload",
+		User:  username,
+	}
+
+	if r.Method == "GET" {
+
+		err = mw.Templ.ExecuteTemplate(w, "add_image.tmpl", data)
+		if err != nil {
+			fmt.Printf("Error while creating Template: %+v\n", err.Error())
+			fmt.Println(err)
+		}
+		return
+	}
+
+	// Parse up to 100 Megabytes of filesize
+	err = r.ParseMultipartForm(100000000)
+	if err != nil {
+		fmt.Printf("Error in image Upload: %+v\n", err.Error())
+		errorstr = append(errorstr, "Image too large. Please keep it under 100 MB")
+	}
+	file, handler, err := r.FormFile("newImage")
+	if err != nil {
+		fmt.Printf("Error in image Upload: %+v\n", err.Error())
+		errorstr = append(errorstr, "Image File not Found in Request")
+		data.Error = errorstr
+		mw.Templ.ExecuteTemplate(w, "add_image.tmpl", data)
+		return
+	}
+
+	defer file.Close()
+
+	//Create a Temporary File to get a random File name.
+	imageFile, err := ioutil.TempFile(os.TempDir(), "upload-*.png")
+	if err != nil {
+		fmt.Printf("Creation not possible: %+v\n", err.Error())
+		errorstr = append(errorstr, "Error creating File")
+	}
+	//Use the random Filename for the actual File if it doesn't exist yet
+	imageName := imageFile.Name()
+	actualImagePath := "images/" + filepath.Base(imageName)
+	for _, err := os.Stat(actualImagePath); err == nil; {
+		fmt.Printf("This File already exists!")
+		imageFile.Close()
+		imageFile, err = ioutil.TempFile(os.TempDir(), "upload-*.png")
+		if err != nil {
+			fmt.Printf("Creation not possible: %+v\n", err.Error())
+			errorstr = append(errorstr, "Error creating File")
+		}
+		imageName = imageFile.Name()
+		actualImagePath = "images/" + filepath.Base(imageName)
+	}
+	fmt.Printf("Writing file to %+v\n", imageName)
+	imageFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Printf("Error reading Bytes: %+v\n", err.Error())
+		errorstr = append(errorstr, "Image not readable")
+	}
+	err = ioutil.WriteFile(actualImagePath, fileBytes, 0666)
+
+	description := r.FormValue("description")
+
+	fmt.Printf("Upload-Filename: %+v\nDescription: %+v\nSize: %+v\n", actualImagePath, description, handler.Size)
+
+	err = db.AddImage(username, actualImagePath, description)
+	if err != nil {
+		fmt.Printf("Error while Saving File to Database: %+v\n", err.Error())
+		errorstr = append(errorstr, "Uploading information to Database went wrong.")
+	}
+
+	if len(errorstr) > 0 {
+		data.Error = errorstr
+		mw.Templ.ExecuteTemplate(w, "add_image.tmpl", data)
+		return
+	}
+
+	http.Redirect(w, r, "/my-images", http.StatusSeeOther)
+}
+
+//GetImages is the Handler for the User "My Images" Webpage
+func GetImages(w http.ResponseWriter, r *http.Request) {
+	mw.SetupSession(w, r)
+	username, err := mw.CheckAuthentication(w, r)
+	if err != nil {
+		fmt.Printf("User not logged in.")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	userImages, err := db.GetImagesForUser(username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := st.Data{
+		Images: userImages,
+		Title:  "Flashlight Meine Bilder",
+		Error:  nil,
+		User:   username,
+	}
+
+	mw.Templ.ExecuteTemplate(w, "images.tmpl", data)
 }

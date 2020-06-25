@@ -38,11 +38,11 @@ func SetupSession(w http.ResponseWriter, r *http.Request) {
 	var err error
 	session, err = cookieStore.Get(r, sessionSTR)
 	if err != nil {
-		fmt.Printf("Error initializing cookieStore: %+v\n", err.Error())
+		fmt.Printf("Error getting Session: %+v\n", err.Error())
 	}
-	if session.Values[authenticatedSTR] == nil {
+	if session.IsNew {
 		session.Values[authenticatedSTR] = false
-		session.Values[usernameSTR] = "none"
+		session.Values[usernameSTR] = ""
 		SaveSession(w, r)
 	}
 }
@@ -72,15 +72,16 @@ func EndSession(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Logging out user %s\n", username)
 	session.Values[usernameSTR] = ""
 	session.Values[authenticatedSTR] = false
+	SaveSession(w, r)
 }
 
 //CheckAuthentication checks if the current User has a valid session and if the session is authenticated. If it is not, then an Error message should be returned and the Starting Page is opened
 func CheckAuthentication(w http.ResponseWriter, r *http.Request) (string, error) {
-	fmt.Printf("User authentication: %+v for User %+v\n", session.Values[authenticatedSTR], session.Values[usernameSTR])
 	username := session.Values[usernameSTR].(string)
 	if !session.Values[authenticatedSTR].(bool) {
 		return username, errors.New("User not authenticated")
 	}
+	fmt.Printf("User %+v is logged in.\n", username)
 	return username, nil
 }
 

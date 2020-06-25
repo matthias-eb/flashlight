@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	mw "github.com/matthias-eb/flashlight/app/middleware"
+	st "github.com/matthias-eb/flashlight/app/structs"
 )
 
 //Preview responds to a Get Request to Root. It will then show the index Page with the newest Posts of all Users
@@ -12,52 +13,51 @@ func Preview(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Generating Preview")
 	mw.SetupSession(w, r)
 	username, err := mw.CheckAuthentication(w, r)
-	data := Data{
+	data := st.Data{
 		Title: "Flashlight",
 		Error: nil,
 	}
-	var images []Image
-	var comments []Comment
-	comment := Comment{
+	var images []st.Image
+	var comments []st.Comment
+	comment := st.Comment{
 		Commentor: "Alex",
 		Comment:   "This is a dang stupid comment, but haven't I seen that picture before in my life?",
 	}
 	comments = append(comments, comment)
 
-	image := Image{
+	image := st.Image{
 		Owner:       "Max Mustermann",
 		Date:        "23.10.2017 - 15:00",
-		Path:        "images/Max Mustermann/new-york-taxi.jpg",
-		Likes:       "10",
+		Path:        "images/new-york-taxi.jpg",
+		Likes:       10,
 		Description: "Some quick example",
 		Comments:    comments,
 	}
 	images = append(images, image)
 
-	comment = Comment{
+	comment = st.Comment{
 		Commentor: "Alex",
 		Comment:   "This is a dang stupid comment, but haven't I seen that picture before in my life?",
 	}
 	comments = append(comments, comment)
-	comment = Comment{
+	comment = st.Comment{
 		Commentor: "Ben",
 		Comment:   "This is a dang stupid comment, but haven't I seen that comment before in my life?",
 	}
 	comments = append(comments, comment)
 
-	image = Image{
+	image = st.Image{
 		Owner:       "Max Mustermann",
 		Date:        "23.10.2017 - 14:00",
-		Path:        "images/Max Mustermann/new-york-taxi.jpg",
-		Likes:       "10",
+		Path:        "images/new-york-taxi.jpg",
+		Likes:       10,
 		Description: "Some quick example",
 		Comments:    comments,
 	}
 	images = append(images, image)
 	if err != nil {
 		data.User = ""
-
-		fmt.Printf("User is not logged in. Error: %+v\n", err)
+		fmt.Printf("User is not logged in.")
 	} else {
 		fmt.Printf("User %+v is logged in.\n", username)
 		data.User = username

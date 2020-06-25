@@ -1,0 +1,31 @@
+{{template "nav_elsewhere" .Title}}
+    <div class="container central_view">
+		<div class="col">
+			<div class="row pb-5">
+					<h5 class="mb-0 w-100 font-weight-bold">{{.User}}</h5>
+					<div><small>Hier kannst du ein neues Bild hochladen.</small></div>
+			</div>
+			{{if .Error}}
+			<div class="row border rounded bd-danger">
+				<ul>
+					{{range .Error}}
+					<li>{{.}}</li>
+					{{end}}
+				</ul>
+			</div>
+			{{end}}
+			<div class="row">
+				<form enctype="multipart/form-data" action="./upload" method="POST">
+					<input type="file" id="newImage" name="newImage" accept="image/*">
+				</div>
+				<div class="row">
+					<textarea name="description" rows="3" class="w-100 rounded" id="description" placeholder="Beschreibung"></textarea>
+				</div>
+				<div class="row justify-content-center">
+					<button type="submit" class="button bg_primary_flashlight w-75 rounded">Hochladen</button>
+				</div>
+			</form>
+			</div>
+		</div>
+	</div>
+{{template "footer"}}

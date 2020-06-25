@@ -18,5 +18,7 @@ func init() {
 		"templates/nav_elsewhere.tmpl",
 		"templates/index.tmpl",
 		"templates/register.tmpl",
-		"templates/login.tmpl"))
+		"templates/login.tmpl",
+		"templates/add_image.tmpl",
+		"templates/images.tmpl"))
 }
