@@ -50,7 +50,7 @@ func SetupSession(w http.ResponseWriter, r *http.Request) {
 //SaveSession saves the current session.
 func SaveSession(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
-	fmt.Printf("Session saved for User")
+	fmt.Printf("Session saved for User\n")
 }
 
 //AuthenticateUser authenticates a User and saves the cookies, if the password is correct.
@@ -75,7 +75,8 @@ func EndSession(w http.ResponseWriter, r *http.Request) {
 	SaveSession(w, r)
 }
 
-//CheckAuthentication checks if the current User has a valid session and if the session is authenticated. If it is not, then an Error message should be returned and the Starting Page is opened
+//CheckAuthentication checks if the current User has a valid session and if the session is authenticated. If it is not, then an Error message should be returned and the Starting Page should be redircted to.
+//Returns the username and nil if no error occured and an empty username and the error otherwise.
 func CheckAuthentication(w http.ResponseWriter, r *http.Request) (string, error) {
 	username := session.Values[usernameSTR].(string)
 	if !session.Values[authenticatedSTR].(bool) {

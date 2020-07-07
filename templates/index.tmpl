@@ -1,5 +1,5 @@
-{{template "nav_index" .Title}}
 {{$username := .User}}
+{{template "nav_index" .Title}}
     <div class="container central_view">
 		{{if .User}}
 			{{template "index_top_logged_in" .User}}
@@ -8,7 +8,7 @@
         {{end}}
 		{{range .Images}}
         <div class="row">
-			<div class="card">
+			<div class="card w-100" id="{{.Path}}">
 				{{if $username}}
 				<div class="card-header">
 					<div class="row pb-0">
@@ -19,7 +19,10 @@
 							</div>
 						</div>
 						<div class="col-3 col-lg-2">
-							<button class="{{if .Liked}}active{{end}} h-100 w-100 rounded" type="submit" id="like" style="background-color: white; border: 2px solid #f6b92b;" {{if .Liked}}disabled{{end}}><i class="fa fa-heart primary_flashlight"></i></button>
+							<form class="h-100 w-100" action="/like" method="post">
+								<input style="display: none;" name="imagepath" value="{{.Path}}">
+								<button class="{{if .Liked}}active{{end}} h-100 w-100 rounded" type="submit" id="like" style="background-color: white; border: 2px solid #f6b92b;" {{if .Liked}}disabled{{end}}><i class="fa fa-heart primary_flashlight"></i></button>
+							</form>						
 						</div>
 					</div>
 				</div>
@@ -29,7 +32,7 @@
 					<div class="card_date">{{.Date}}</div>
 				</div>
 				{{end}}
-				<img src="{{.Path}}" class="card-img-top" alt="">
+				<img src="{{.Path}}" class="card-img-top" alt="" style="object-fit: contain;">
 				<div class="card-body">
 					<h6 class="card-title bold-title">Gefällt {{.Likes}} Leuten</h6>
 					<p class="card-text">{{.Description}}</p>
@@ -47,10 +50,11 @@
 					<form action="/comment" method="POST">
 						<div class="row pb-0">
 							<div class="col-10">
+								<input style="display: none;" name="imagepath" value="{{.Path}}"/>
 								<input class="form-control-plaintext rounded" type="text" name="comment" placeholder="Kommentieren" id="comment" required>
 							</div>
 							<div class="col-2">
-								<button class="button rounded" action="submit" style="background-color: whitesmoke;"><i class="fa fa-paper-plane" style="color: black;"></i></button>
+								<button class="button rounded" id="commentbutton" action="submit" style="background-color: whitesmoke;"><i class="fa fa-paper-plane" style="color: black;"></i></button>
 							</div>
 						</div>
 					</form>

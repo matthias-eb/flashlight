@@ -5,63 +5,33 @@ import (
 	"net/http"
 
 	mw "github.com/matthias-eb/flashlight/app/middleware"
+	db "github.com/matthias-eb/flashlight/app/model"
 	st "github.com/matthias-eb/flashlight/app/structs"
 )
 
 //Preview responds to a Get Request to Root. It will then show the index Page with the newest Posts of all Users
 func Preview(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Generating Preview")
+	var isAuthenticated bool
 	mw.SetupSession(w, r)
 	username, err := mw.CheckAuthentication(w, r)
+	isAuthenticated = err == nil // isAuthenticated is true if the error was nil.
 	data := st.Data{
 		Title: "Flashlight",
 		Error: nil,
 	}
-	var images []st.Image
-	var comments []st.Comment
-	comment := st.Comment{
-		Commentor: "Alex",
-		Comment:   "This is a dang stupid comment, but haven't I seen that picture before in my life?",
-	}
-	comments = append(comments, comment)
-
-	image := st.Image{
-		Owner:       "Max Mustermann",
-		Date:        "23.10.2017 - 15:00",
-		Path:        "images/new-york-taxi.jpg",
-		Likes:       10,
-		Description: "Some quick example",
-		Comments:    comments,
-	}
-	images = append(images, image)
-
-	comment = st.Comment{
-		Commentor: "Alex",
-		Comment:   "This is a dang stupid comment, but haven't I seen that picture before in my life?",
-	}
-	comments = append(comments, comment)
-	comment = st.Comment{
-		Commentor: "Ben",
-		Comment:   "This is a dang stupid comment, but haven't I seen that comment before in my life?",
-	}
-	comments = append(comments, comment)
-
-	image = st.Image{
-		Owner:       "Max Mustermann",
-		Date:        "23.10.2017 - 14:00",
-		Path:        "images/new-york-taxi.jpg",
-		Likes:       10,
-		Description: "Some quick example",
-		Comments:    comments,
-	}
-	images = append(images, image)
+	images, err := db.GetAllImages(username)
 	if err != nil {
+		fmt.Printf("Error executing Templates: %s\n", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !isAuthenticated {
 		data.User = ""
-		fmt.Printf("User is not logged in.")
+		fmt.Printf("User is not logged in.\n")
 	} else {
 		fmt.Printf("User %+v is logged in.\n", username)
 		data.User = username
-		images[0].Liked = true
 	}
 	data.Images = images
 	err = mw.Templ.ExecuteTemplate(w, "index.tmpl", data)

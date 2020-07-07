@@ -1,0 +1,17 @@
+{{define "alert"}}
+<div class=" w-100 alertdiv bg-danger text-body border rounded">
+
+</div>
+<script>
+var alerts = document.getElementsByClassName("alertdiv");
+var i;
+
+for (i = 0; i < alerts.length; i++) {
+  alerts[i].onclick = function(){
+    var div = this;
+    div.style.opacity = "0";
+    setTimeout(function(){ div.style.display = "none"; }, 600);
+  }
+}
+</script>
+{{end}}

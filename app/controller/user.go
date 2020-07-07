@@ -228,3 +228,49 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 
 	mw.Templ.ExecuteTemplate(w, "images.tmpl", data)
 }
+
+// AddComment saves a Comment that was added to an image
+func AddComment(w http.ResponseWriter, r *http.Request) {
+	mw.SetupSession(w, r)
+	username, err := mw.CheckAuthentication(w, r)
+	if err != nil {
+		fmt.Printf("User not authenticated while trying to Post comment. Redirectig..\n")
+		mw.SaveSession(w, r)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	comment := r.FormValue("comment")
+	path := r.FormValue("imagepath")
+
+	err = db.AddComment(username, comment, path)
+	if err != nil {
+		fmt.Println("Error adding Comment:")
+		fmt.Println(err)
+		http.Error(w, "Error Posting Comment", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/#"+path, http.StatusSeeOther)
+}
+
+//LikeImage likes an Image if the User is logged in and has a valid session and the User did not like nor is the owner of the image.
+func LikeImage(w http.ResponseWriter, r *http.Request) {
+	mw.SetupSession(w, r)
+	username, err := mw.CheckAuthentication(w, r)
+	if err != nil {
+		fmt.Printf("User not authenticated while trying to Post. Redirectig..\n")
+		mw.SaveSession(w, r)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	path := r.FormValue("imagepath")
+
+	err = db.AddLike(username, path)
+	if err != nil {
+		fmt.Println("Error while liking Image: ")
+		fmt.Println(err)
+	}
+	mw.SaveSession(w, r)
+	http.Redirect(w, r, "/#"+path, http.StatusSeeOther)
+}

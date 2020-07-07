@@ -31,10 +31,13 @@
 						</div>
 					</div>
 					<div class="card-footer">
-						<button class="button rounded del_button">
-							<i class="fa fa-trash primary_flashlight"></i><span
-								class="primary_flashlight pl-2">Löschen</span>
-						</button>
+						<form action="/deleteImage" method="POST">
+							<input style="display: none;" name="path" value="{{.Path}}"/>
+							<button class="button rounded del_button">
+								<i class="fa fa-trash primary_flashlight"></i><span
+									class="primary_flashlight pl-2">Löschen</span>
+							</button>
+						</form>
 					</div>
 				</div>
 			</div>

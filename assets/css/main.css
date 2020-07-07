@@ -154,3 +154,7 @@ img.card_img {
 	height: 13rem;
 	object-fit: contain;
 }
+
+button#commentbutton:hover {
+	background-color: lightgray;
+}

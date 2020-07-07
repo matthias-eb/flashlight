@@ -6,9 +6,21 @@ import (
 
 var couchDB *couchdb.Database
 
+const databaseName = "flashlight"
+
 func init() {
 	var err error
-	couchDB, err = couchdb.NewDatabase("http://localhost:5984/flashlight")
+
+	server, err := couchdb.NewServer("http://localhost:5984")
+	if err != nil {
+		panic(err)
+	}
+
+	if !server.Contains(databaseName) {
+		couchDB, err = server.Create(databaseName)
+	} else {
+		couchDB, err = server.Get(databaseName)
+	}
 	if err != nil {
 		panic(err)
 	}

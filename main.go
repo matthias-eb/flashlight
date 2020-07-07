@@ -8,6 +8,8 @@ import (
 	//Chaining Methods with this Handler
 
 	// Import own controller functions
+	"fmt"
+
 	ctr "github.com/matthias-eb/flashlight/app/controller"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
@@ -25,6 +27,8 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/logout", ctr.Logout).Methods("POST")
 	r.HandleFunc("/upload", ctr.UploadImage).Methods("GET", "POST")
 	r.HandleFunc("/my-images", ctr.GetImages).Methods("GET")
+	r.HandleFunc("/comment", ctr.AddComment).Methods("POST")
+	r.HandleFunc("/like", ctr.LikeImage).Methods("POST")
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.
@@ -61,5 +65,8 @@ func main() {
 	// After defining our server, we finally "listen and serve" on port 8080
 	// The second argument is the handler, which we defined earlier
 	// and the handler defined above (in "HandleFunc") is used
-	http.ListenAndServe(":8080", r)
+	err := http.ListenAndServe(":8080", r)
+	if err != nil {
+		fmt.Println(err)
+	}
 }

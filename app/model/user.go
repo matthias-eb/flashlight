@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	st "github.com/matthias-eb/flashlight/app/structs"
 )
@@ -17,15 +18,16 @@ type User struct {
 	Password string `json:"password"`
 }
 type image struct {
-	ID          string `json:"_id"`
-	Rev         string `json:"_rev"`
-	Type        string `json:"type"`
-	Path        string `json:"path"`
-	UserID      string `json:"user"`
-	Description string `json:"comment"`
-	Date        string `json:"timestamp"`
+	ID          string   `json:"_id"`
+	Rev         string   `json:"_rev"`
+	Type        string   `json:"type"`
+	Path        string   `json:"path"`
+	UserID      string   `json:"user"`
+	Description string   `json:"comment"`
+	Date        string   `json:"timestamp"`
+	Likes       []string `json:"likes"`
 }
-type comment struct {
+type commentDB struct {
 	ID        string `json:"_id"`
 	Rev       string `json:"_rev"`
 	Type      string `json:"type"`
@@ -89,73 +91,11 @@ func AddUser(user User) (err error) {
 	return nil
 }
 
-//AddImage Saves an Image to the Database and returns an eror if it it wasn't successful
-func AddImage(username string, filepath string, description string) (err error) {
-	var imageMap map[string]interface{}
-	var user User
-
-	//Query Database for User so we can get his ID
-	query := `
-	{
-		"selector": {
-			"type": "user",
-			"username": "%s"
-		}
-	}`
-
-	//More than one User and no User found will give an error
-	u, err := couchDB.QueryJSON(fmt.Sprintf(query, username))
-	if err != nil {
-		return err
-	} else if len(u) == 0 {
-		err = errors.New("Username not found")
-		return
-	} else if len(u) > 1 {
-		err = errors.New("More than one User with the same Name")
-	}
-
-	//Move all Data from the Database into the User object
-	uJSON, err := json.Marshal(u[0])
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(uJSON, &user)
-	if err != nil {
-		return err
-	}
-
-	//Fill image Object with Data
-	image := image{
-		Type:        "image",
-		Path:        filepath,
-		Description: description,
-		UserID:      user.ID,
-	}
-	//Create a json map from it
-	uJSON, err = json.Marshal(image)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(uJSON, &imageMap)
-	if err != nil {
-		return err
-	}
-	delete(imageMap, "_id")
-	delete(imageMap, "_rev")
-
-	//Save it to the Database
-	_, _, err = couchDB.Save(imageMap, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 //GetImagesForUser returns all Images that belong to a user
 func GetImagesForUser(username string) (images []st.Image, err error) {
 	var imageMap []map[string]interface{}
 	var imagesDB []image
-	user, err := getUserRaw(username)
+	user, err := getDBUser(username)
 	if err != nil {
 		fmt.Printf("Error getting User: %+v\n", err)
 		return
@@ -186,11 +126,15 @@ func GetImagesForUser(username string) (images []st.Image, err error) {
 	images = make([]st.Image, len(imagesDB))
 	//Fill return values
 	for i, imageDB := range imagesDB {
+		ts, err := time.Parse("2006-01-02 15:04:05", imageDB.Date)
+		if err != nil {
+			return nil, err
+		}
 		image = st.Image{
 			Owner:       username,
 			Path:        imageDB.Path,
 			Description: imageDB.Description,
-			Date:        imageDB.Date,
+			Date:        ts.Format("2.1.2006 15:04") + " Uhr",
 			Liked:       true,
 		}
 
@@ -215,17 +159,16 @@ func GetImagesForUser(username string) (images []st.Image, err error) {
 		image.Comments = comments
 		//image.NrComments = strconv.Itoa(len(comments))
 		image.NrComments = len(comments)
-		fmt.Printf("Nr of Comments: %+v\n", image.NrComments)
 
 		//ToDo: Likes
-		image.Likes = 12
+		image.Likes = len(imageDB.Likes)
 
 		images[i] = image
 	}
 	return
 }
 
-func getUserRaw(username string) (user User, err error) {
+func getDBUser(username string) (user User, err error) {
 	var u []map[string]interface{}
 	var uJSON []byte
 	query := `
@@ -255,27 +198,6 @@ func getUserRaw(username string) (user User, err error) {
 	return
 }
 
-func getCommentsForImage(imageID string) (comments []comment, err error) {
-	query := `
-	{
-		"selector": {
-			"type": "comment",
-			"parent": "%s"
-		}
-	}`
-
-	commentsMap, err := couchDB.QueryJSON(fmt.Sprintf(query, imageID))
-	if err != nil {
-		return
-	}
-	cJSON, err := json.Marshal(commentsMap)
-	if err != nil {
-		return
-	}
-	json.Unmarshal(cJSON, &comments)
-	return
-}
-
 func getUserFromID(userID string) (user User, err error) {
 	query := `
 	{
@@ -289,10 +211,125 @@ func getUserFromID(userID string) (user User, err error) {
 	if err != nil {
 		return
 	}
-	cJSON, err := json.Marshal(userMap)
+	if len(userMap) < 1 {
+		err = errors.New("User not found")
+		return
+	} else if len(userMap) > 1 {
+		err = errors.New("User no unique")
+		return
+	}
+	cJSON, err := json.Marshal(userMap[0])
 	if err != nil {
 		return
 	}
-	json.Unmarshal(cJSON, &user)
+	err = json.Unmarshal(cJSON, &user)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// AddComment uses the imagepath to search for the image corresponding to it and saves a new Comment for the ID of that Image and with the User.
+func AddComment(username string, comment string, imagepath string) (err error) {
+	var image image
+	var imageMap []map[string]interface{}
+	var commentStruct commentDB
+	var commentMap map[string]interface{}
+
+	query := `
+	{
+		"selector": {
+			"type": "image",
+			"path": "%s"
+		}
+	}`
+
+	imageMap, err = couchDB.QueryJSON(fmt.Sprintf(query, imagepath))
+	if err != nil {
+		return
+	}
+	if len(imageMap) < 1 {
+		err = errors.New("Image not found for path " + imagepath)
+	} else if len(imageMap) > 1 {
+		err = errors.New("Too many Images for path " + imagepath)
+	}
+
+	// Marshal only the first image
+	iJSON, err := json.Marshal(imageMap[0])
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(iJSON, &image)
+	if err != nil {
+		return
+	}
+
+	u, err := GetUser(username)
+	if err != nil {
+		return
+	}
+
+	commentStruct = commentDB{
+		Type:      "comment",
+		UserID:    u.ID,
+		Comment:   comment,
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
+		ImageID:   image.ID,
+	}
+
+	cJSON, err := json.Marshal(commentStruct)
+	if err != nil {
+		return
+	}
+	json.Unmarshal(cJSON, &commentMap)
+
+	delete(commentMap, "_id")
+	delete(commentMap, "_rev")
+
+	_, _, err = couchDB.Save(commentMap, nil)
+	if err != nil {
+		return
+	}
+	return nil
+}
+
+//AddLike Saves the User that Liked the Image in its Liked array. It will not Like an Image if the Image already contains the ID or if the ID of the user matches the owner of the image.
+func AddLike(username string, imagepath string) (err error) {
+	var imageMap map[string]interface{}
+
+	u, err := getDBUser(username)
+	if err != nil {
+		return
+	}
+
+	img, err := getImageFromPath(imagepath)
+	if err != nil {
+		return
+	}
+
+	if contains(img.Likes, u.ID) {
+		err = errors.New("The User already Liked this image")
+		return
+	} else if img.UserID == u.ID {
+		err = errors.New("The Owner of an Image cannot Like its own image")
+		return
+	}
+
+	img.Likes = append(img.Likes, u.ID)
+
+	imgData, err := json.Marshal(img)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(imgData, &imageMap)
+	if err != nil {
+		return
+	}
+
+	_, _, err = couchDB.Save(imageMap, nil)
+	if err != nil {
+		return
+	}
 	return
 }
