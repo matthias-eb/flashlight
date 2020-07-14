@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/sessions"
 
 	"github.com/gorilla/securecookie"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 const envSessionKey string = "SESSION_KEY"
@@ -50,7 +52,7 @@ func SetupSession(w http.ResponseWriter, r *http.Request) {
 //SaveSession saves the current session.
 func SaveSession(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
-	fmt.Printf("Session saved for User\n")
+	fmt.Printf("Session saved\n")
 }
 
 //AuthenticateUser authenticates a User and saves the cookies, if the password is correct.
@@ -60,7 +62,7 @@ func AuthenticateUser(username string, password string, hashedPassword string) (
 		session.Values[authenticatedSTR] = true
 		session.Values[usernameSTR] = username
 	} else {
-		err = errors.New("Passwords didn't Match")
+		err = errors.New("Passwords didn't Match or User not correct")
 		return
 	}
 	return nil
@@ -86,20 +88,16 @@ func CheckAuthentication(w http.ResponseWriter, r *http.Request) (string, error)
 	return username, nil
 }
 
+// HashPassword hashes the given password to save into the database.
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 15)
+	return string(bytes), err
+}
+
 func passwordCorrect(passwordHashed string, passwordPlain string) bool {
-	if passwordHashed == passwordPlain {
-		return true
+	err := bcrypt.CompareHashAndPassword([]byte(passwordHashed), []byte(passwordPlain))
+	if err != nil {
+		fmt.Println(err)
 	}
-	return false
-	/*
-		passwordDB, err := base64.StdEncoding.DecodeString(passwordHashed)
-		if err != nil {
-			return false
-		}
-		err = bcrypt.CompareHashAndPassword(passwordDB, []byte(passwordPlain))
-		if err != nil {
-			return false
-		}
-		return true
-	*/
+	return err == nil
 }

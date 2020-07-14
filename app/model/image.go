@@ -101,3 +101,50 @@ func getImageFromPath(imagepath string) (img image, err error) {
 	}
 	return
 }
+
+//DeleteImage deletes an Image from the Database
+func DeleteImage(imagepath string) (err error) {
+	var imgComments []commentDB
+	img, err := getImageFromPath(imagepath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Deleting Objects for Imagepath " + img.Path + ":")
+	fmt.Println("\tImageID: " + img.ID)
+
+	query := `
+	{
+		"selector": {
+			"type": "comment",
+			"parent": "%s"
+		}
+	}
+	`
+
+	//Delete all comments belonging to that image.
+	commentMap, err := couchDB.QueryJSON(fmt.Sprintf(query, img.ID))
+	if err != nil {
+		return err
+	}
+	cBytes, err := json.Marshal(commentMap)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(cBytes, &imgComments)
+	if err != nil {
+		return
+	}
+
+	for _, comm := range imgComments {
+		fmt.Println("\tComment ID: " + comm.ID)
+		err = couchDB.Delete(comm.ID)
+		if err != nil {
+			return
+		}
+	}
+
+	err = couchDB.Delete(img.ID)
+	return
+}

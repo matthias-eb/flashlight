@@ -32,13 +32,19 @@
 					</div>
 					<div class="card-footer">
 						<form action="/deleteImage" method="POST">
-							<input style="display: none;" name="path" value="{{.Path}}"/>
+							<input style="display: none;" name="imagepath" value="{{.Path}}"/>
 							<button class="button rounded del_button">
 								<i class="fa fa-trash primary_flashlight"></i><span
 									class="primary_flashlight pl-2">Löschen</span>
 							</button>
 						</form>
 					</div>
+				</div>
+			</div>
+			{{else}}
+			<div class="row">
+				<div class="col">
+					<div><small>Derzeit hast du noch keine Bilder hochgeladen. <a href="/upload">Hier</a> kannst du welche hochladen.</small></div>
 				</div>
 			</div>
             {{end}}

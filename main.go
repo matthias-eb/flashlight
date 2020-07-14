@@ -29,6 +29,7 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/my-images", ctr.GetImages).Methods("GET")
 	r.HandleFunc("/comment", ctr.AddComment).Methods("POST")
 	r.HandleFunc("/like", ctr.LikeImage).Methods("POST")
+	r.HandleFunc("/deleteImage", ctr.DeleteImage).Methods("POST")
 
 	// This is the directory we want to publish, in this case,
 	// the project root, which is currently our working directory.

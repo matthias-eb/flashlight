@@ -82,13 +82,24 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		passwordHashed, err := mw.HashPassword(password)
+		if err != nil {
+			fmt.Println(err)
+			errors = append(errors, "Passwort konnte nicht gehasht werden.")
+		}
+
+		if len(errors) > 0 {
+			mw.Templ.ExecuteTemplate(w, "register.tmpl", st.Data{Title: "Flashlight Registration", Error: errors})
+			return
+		}
+
 		user := db.User{
 			Name:     username,
 			Type:     "user",
-			Password: password,
+			Password: passwordHashed,
 		}
 
-		err := db.AddUser(user)
+		err = db.AddUser(user)
 		if err != nil {
 			fmt.Printf("Error while Adding User: %+v\n", err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -273,4 +284,25 @@ func LikeImage(w http.ResponseWriter, r *http.Request) {
 	}
 	mw.SaveSession(w, r)
 	http.Redirect(w, r, "/#"+path, http.StatusSeeOther)
+}
+
+func DeleteImage(w http.ResponseWriter, r *http.Request) {
+	mw.SetupSession(w, r)
+	_, err := mw.CheckAuthentication(w, r)
+	if err != nil {
+		fmt.Println("Tried to delete Image while not being logged in. Redirecting.")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	imagepath := r.FormValue("imagepath")
+
+	err = db.DeleteImage(imagepath)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Could not delete Image for Path "+imagepath, http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/my-images", http.StatusSeeOther)
 }
