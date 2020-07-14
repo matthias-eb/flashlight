@@ -11,6 +11,7 @@ import (
 	"fmt"
 
 	ctr "github.com/matthias-eb/flashlight/app/controller"
+	mw "github.com/matthias-eb/flashlight/app/middleware"
 
 	// The "net/http" library has methods to implement HTTP clients and servers
 	"net/http"
@@ -21,7 +22,7 @@ import (
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/", ctr.Preview).Methods("GET")
+	r.HandleFunc("/", mw.SetupMiddleware(ctr.Preview)).Methods("GET")
 	r.HandleFunc("/login", ctr.Login).Methods("GET", "POST")
 	r.HandleFunc("/register", ctr.Register).Methods("GET", "POST")
 	r.HandleFunc("/logout", ctr.Logout).Methods("POST")
