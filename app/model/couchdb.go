@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 
 	couchdb "github.com/leesper/couchdb-golang"
 )
@@ -37,10 +38,27 @@ func init() {
 		panic(err)
 	}
 
+	auth_Token, err := server.Login("fishface", "followthefish")
+	if err != nil {
+		panic(err)
+	}
+
 	if !server.Contains(databaseName) {
+		fmt.Printf("Creating new Database..\n")
+		err = server.VerifyToken(auth_Token)
+		if err != nil {
+			panic(err)
+		}
+		// Fails due to being unauthorized, even after logging in... But why? No Use for the Auth_token foundet, needs to be in cookies somehow..
 		couchDB, err = server.Create(databaseName)
+		if err != nil {
+			panic(err)
+		}
 	} else {
 		couchDB, err = server.Get(databaseName)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	indexes, err := couchDB.GetIndex()
@@ -64,6 +82,7 @@ func init() {
 
 	}
 
+	// This does not work and will onlythrow an internal server error
 	if !timestampIndexable {
 		_, _, err = couchDB.PutIndex([]string{"timestamp"}, "", "")
 		if err != nil {
